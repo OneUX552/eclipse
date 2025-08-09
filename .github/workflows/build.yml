@@ -1,11 +1,11 @@
-name: Build Hydra32 ESP32 Firmware
+name: Build Hydra32 Firmware
 
 on:
-  workflow_dispatch:   # run manually from Actions tab
+  workflow_dispatch:
   push:
     branches:
-      - master
       - main
+  pull_request:
 
 jobs:
   build:
@@ -13,27 +13,28 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 zip
-
-      - name: Cache ESP-IDF
-        uses: actions/cache@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          path: ~/esp/esp-idf
-          key: esp-idf-v4.1
+          python-version: '3.12'
 
-      - name: Set up ESP-IDF 4.1
-        if: steps.cache.outputs.cache-hit != 'true'
+      - name: Install required packages
+        run: sudo apt-get update && sudo apt-get install -y git wget flex bison gperf python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
+
+      - name: Set up ESP-IDF v4.1
         run: |
           mkdir -p ~/esp
           cd ~/esp
-          git clone --branch v4.1 --depth 1 https://github.com/espressif/esp-idf.git
-          cd esp-idf
-          ./install.sh
+          if [ ! -d esp-idf ]; then
+            git clone --branch v4.1 --depth 1 https://github.com/espressif/esp-idf.git
+            cd esp-idf
+            ./install.sh
+          else
+            echo "ESP-IDF already present, skipping clone."
+            cd esp-idf
+          fi
 
       - name: Build firmware
         run: |
@@ -46,15 +47,30 @@ jobs:
       - name: Prepare flash-ready files
         run: |
           mkdir flash-ready
-          cp build/bootloader/bootloader.bin flash-ready/ || true
-          cp build/partition_table/partition-table.bin flash-ready/ || true
-          cp build/*.bin flash-ready/ || true
-          cp build/*.elf flash-ready/ || true
+          cp build/bootloader/bootloader.bin flash-ready/
+          cp build/partition_table/partition-table.bin flash-ready/
+          cp build/esp32-wifi-penetration-tool.bin flash-ready/
+          cp build/esp32-wifi-penetration-tool.elf flash-ready/
+
+          # Create flash script
+          cat <<'EOF' > flash-ready/flash.sh
+#!/bin/bash
+if [ -z "$1" ]; then
+
+  echo "Example: $0 /dev/ttyUSB0"
+  exit 1
+fi
+esptool.py -p $1 -b 460800 --before default_reset --after hard_reset --chip esp32 \
+  write_flash --flash_mode dio --flash_size detect --flash_freq 40m \
+  0x1000 bootloader.bin 0x8000 partition-table.bin 0x10000 esp32-wifi-penetration-tool.bin
+EOF
+          chmod +x flash-ready/flash.sh
+
           cd flash-ready
           zip -r ../hydra32_firmware.zip .
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: hydra32-firmware
+          name: hydra32_firmware
           path: hydra32_firmware.zip
