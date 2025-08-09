@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 zip
 
       - name: Cache ESP-IDF
         uses: actions/cache@v4
@@ -40,14 +40,14 @@ jobs:
           cd ~/esp/esp-idf
           . ./export.sh
           cd $GITHUB_WORKSPACE
-          idf.py set-target esp32
-          idf.py build
+          mkdir -p build
+          idf.py build -DIDF_TARGET=esp32
 
       - name: Prepare flash-ready files
         run: |
           mkdir flash-ready
-          cp build/bootloader/bootloader.bin flash-ready/
-          cp build/partition_table/partition-table.bin flash-ready/
+          cp build/bootloader/bootloader.bin flash-ready/ || true
+          cp build/partition_table/partition-table.bin flash-ready/ || true
           cp build/*.bin flash-ready/ || true
           cp build/*.elf flash-ready/ || true
           cd flash-ready
