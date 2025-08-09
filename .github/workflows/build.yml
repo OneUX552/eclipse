@@ -1,76 +1,64 @@
-name: Build Hydra32 Firmware
+name: Build ESP32 Firmware
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ master ]
   pull_request:
+    branches: [ master ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
 
-      - name: Install required packages
-        run: sudo apt-get update && sudo apt-get install -y git wget flex bison gperf python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
+    - name: Install ESP-IDF dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
-      - name: Set up ESP-IDF v4.1
-        run: |
-          mkdir -p ~/esp
-          cd ~/esp
-          if [ ! -d esp-idf ]; then
-            git clone --branch v4.1 --depth 1 https://github.com/espressif/esp-idf.git
-            cd esp-idf
-            ./install.sh
-          else
-            echo "ESP-IDF already present, skipping clone."
-            cd esp-idf
-          fi
+    - name: Install ESP-IDF v4.1
+      run: |
+        git clone --recursive https://github.com/espressif/esp-idf.git
+        cd esp-idf
+        git checkout release/v4.1
+        git submodule update --init --recursive
+        ./install.sh
 
-      - name: Build firmware
-        run: |
-          cd ~/esp/esp-idf
-          . ./export.sh
-          cd $GITHUB_WORKSPACE
-          mkdir -p build
-          idf.py build -DIDF_TARGET=esp32
+    - name: Set up environment
+      run: |
+        echo "$(pwd)/esp-idf/tools" >> $GITHUB_PATH
+        echo "IDF_PATH=$(pwd)/esp-idf" >> $GITHUB_ENV
 
-      - name: Prepare flash-ready files
-        run: |
-          mkdir flash-ready
-          cp build/bootloader/bootloader.bin flash-ready/
-          cp build/partition_table/partition-table.bin flash-ready/
-          cp build/esp32-wifi-penetration-tool.bin flash-ready/
-          cp build/esp32-wifi-penetration-tool.elf flash-ready/
+    - name: Build firmware
+      run: |
+        source esp-idf/export.sh
+        cd $GITHUB_WORKSPACE
+        idf.py build
 
-          # Create flash script
-          cat <<'EOF' > flash-ready/flash.sh
-#!/bin/bash
-if [ -z "$1" ]; then
+    - name: Collect binaries
+      run: |
+        mkdir firmware-binaries
+        cp build/bootloader/bootloader.bin firmware-binaries/
+        cp build/partition_table/partition-table.bin firmware-binaries/
+        cp build/ota_data_initial.bin firmware-binaries/
+        cp build/hydra32.bin firmware-binaries/
+        cp build/hydra32.elf firmware-binaries/
+        cp build/flash_args firmware-binaries/
+        cp sdkconfig firmware-binaries/
 
-  echo "Example: $0 /dev/ttyUSB0"
-  exit 1
-fi
-esptool.py -p $1 -b 460800 --before default_reset --after hard_reset --chip esp32 \
-  write_flash --flash_mode dio --flash_size detect --flash_freq 40m \
-  0x1000 bootloader.bin 0x8000 partition-table.bin 0x10000 esp32-wifi-penetration-tool.bin
-EOF
-          chmod +x flash-ready/flash.sh
-
-          cd flash-ready
-          zip -r ../hydra32_firmware.zip .
-
-      - name: Upload firmware artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: hydra32_firmware
-          path: hydra32_firmware.zip
+    - name: Upload firmware artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: firmware-binaries
+        path: firmware-binaries/
