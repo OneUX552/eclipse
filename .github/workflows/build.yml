@@ -13,12 +13,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: 'recursive'
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.8'
 
@@ -46,19 +46,27 @@ jobs:
         cd $GITHUB_WORKSPACE
         idf.py build
 
-    - name: Collect binaries
+    - name: Collect all binaries
       run: |
         mkdir firmware-binaries
-        cp build/bootloader/bootloader.bin firmware-binaries/
-        cp build/partition_table/partition-table.bin firmware-binaries/
-        cp build/ota_data_initial.bin firmware-binaries/
-        cp build/hydra32.bin firmware-binaries/
+        # Copy all .bin files from build directory
+        find build -type f -name "*.bin" -exec cp {} firmware-binaries/ \;
+        
+        # Copy important specific files
         cp build/hydra32.elf firmware-binaries/
         cp build/flash_args firmware-binaries/
         cp sdkconfig firmware-binaries/
+        
+        # Create flash script
+        echo '#!/bin/bash' > firmware-binaries/flash.sh
+        echo 'esptool.py --chip esp32 --port $1 --baud 921600 \' >> firmware-binaries/flash.sh
+        echo '  --before default_reset --after hard_reset write_flash \' >> firmware-binaries/flash.sh
+        echo '  @flash_args' >> firmware-binaries/flash.sh
+        chmod +x firmware-binaries/flash.sh
 
     - name: Upload firmware artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: firmware-binaries
         path: firmware-binaries/
+        retention-days: 7
