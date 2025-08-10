@@ -4,110 +4,146 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Hydra32 </title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body {
-            width: fit-content;
-            background-color: #000000; /* AMOLED pure black */
-            color: #eee; /* Light text */
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-                         Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            margin: 20px;
+<style>
+    body {
+        width: fit-content;
+        background-color: #000000; /* AMOLED pure black */
+        color: #eee; /* Light text */
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        margin: 20px;
+    }
+    table, tr, th {
+        border: 1px solid #444; /* softer border */
+        border-collapse: collapse;
+        text-align: center;
+    }
+    th, td {
+        padding:10px;
+    }
+    tr:hover, tr.selected {
+        background-color: #1a73e8; /* subtle blue highlight */
+        cursor:pointer;
+        color: #fff;
+    }
+    button {
+        background-color: #1a73e8;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 600;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #155ab6;
+    }
+    select, input[type=number] {
+        background-color: #121212;
+        color: #eee;
+        border: 1px solid #444;
+        padding: 5px;
+        border-radius: 4px;
+        font-family: inherit;
+    }
+    label {
+        font-weight: 600;
+    }
+    fieldset {
+        border: 1px solid #444;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+    }
+    legend {
+        font-weight: 700;
+        padding: 0 10px;
+    }
+    section {
+        margin-bottom: 20px;
+    }
+    a {
+        color: #1a73e8;
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+    h1 {
+        font-weight: bold;
+        font-size: 3em;
+        color: #fff;
+        text-align: center;
+        animation: rgbGlow 3s infinite alternate;
+    }
+    @keyframes rgbGlow {
+        0% {
+            text-shadow:
+                0 0 5px red,
+                0 0 10px red,
+                0 0 20px red,
+                0 0 40px red;
         }
-        table, tr, th {
-            border: 1px solid #444; /* softer border */
-            border-collapse: collapse;
-            text-align: center;
+        33% {
+            text-shadow:
+                0 0 5px green,
+                0 0 10px green,
+                0 0 20px green,
+                0 0 40px green;
         }
-        th, td {
-            padding:10px;
+        66% {
+            text-shadow:
+                0 0 5px blue,
+                0 0 10px blue,
+                0 0 20px blue,
+                0 0 40px blue;
         }
-        tr:hover, tr.selected {
-            background-color: #1a73e8; /* subtle blue highlight */
-            cursor:pointer;
-            color: #fff;
+        100% {
+            text-shadow:
+                0 0 5px red,
+                0 0 10px red,
+                0 0 20px red,
+                0 0 40px red;
         }
-        button {
-            background-color: #1a73e8;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-weight: 600;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #155ab6;
-        }
-        select, input[type=number] {
-            background-color: #121212;
-            color: #eee;
-            border: 1px solid #444;
-            padding: 5px;
-            border-radius: 4px;
-            font-family: inherit;
-        }
-        label {
-            font-weight: 600;
-        }
-        fieldset {
-            border: 1px solid #444;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-        }
-        legend {
-            font-weight: 700;
-            padding: 0 10px;
-        }
-        section {
-            margin-bottom: 20px;
-        }
-        a {
-            color: #1a73e8;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-  h1 {
-    font-weight: bold;
-    font-size: 3em;
-    color: #fff;
-    text-align: center;
-    animation: rgbGlow 3s infinite alternate;
-  }
+    }
 
-  @keyframes rgbGlow {
-    0% {
-      text-shadow:
-        0 0 5px red,
-        0 0 10px red,
-        0 0 20px red,
-        0 0 40px red;
+    /* Attack type button styles */
+    #attackTypeButtons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
     }
-    33% {
-      text-shadow:
-        0 0 5px green,
-        0 0 10px green,
-        0 0 20px green,
-        0 0 40px green;
+    .attack-btn {
+        flex: 1 1 calc(50% - 10px);
+        padding: 14px;
+        font-size: 15px;
+        font-weight: bold;
+        border: 2px solid transparent;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
     }
-    66% {
-      text-shadow:
-        0 0 5px blue,
-        0 0 10px blue,
-        0 0 20px blue,
-        0 0 40px blue;
+    .attack-btn:hover:not(.disabled) {
+        opacity: 0.9;
+        transform: scale(1.05);
     }
-    100% {
-      text-shadow:
-        0 0 5px red,
-        0 0 10px red,
-        0 0 20px red,
-        0 0 40px red;
+    .attack-btn.active {
+        border: 3px solid white;
+        box-shadow: 0px 0px 10px white;
     }
-  }
-    </style>
+    .attack-btn.passive { background-color: #555; }
+    .attack-btn.handshake { background-color: #3498db; }
+    .attack-btn.pmkid { background-color: #9b59b6; }
+    .attack-btn.deauth { background-color: #e74c3c; }
+    .attack-btn.beacon { background-color: #f39c12; }
+    .attack-btn.ble { background-color: #1abc9c; }
+    .attack-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+</style>
+
 </head>
 <body onLoad="getStatus()">
     <h1>Hydra32 | Cyberkit </h1>
@@ -124,18 +160,14 @@
                 </p>
             </fieldset>
             <fieldset>
-                <legend>Attack configuration</legend>
-                <p>
-                    <label for="attack_type">Attack type:</label>
-                    <select id="attack_type" onChange="updateConfigurableFields(this)" required>
-                        <option value="0" title="This type is not implemented yet." disabled>ATTACK_TYPE_PASSIVE</option>
-                        <option value="1">HANDSHAKE (BETA)</option>
-                        <option value="2" selected>PMKID</option>
-                        <option value="3">DEAUTHENTICATION (DOS)</option>
-                        <option value="4">WIFI BEACON SPAM</option> <!-- New Beacon Spam option -->
-						<option value="5">ATTACK_TYPE_BLE_BEACON_SPAM</option>
-                    </select>
-                </p>
+                <fieldset>
+    <legend>Attack configuration</legend>
+    <div id="attackTypeButtons">
+        <button data-value="3" class="attack-btn">Deauth (DOS)</button>
+        <button data-value="4" class="attack-btn">WiFi Beacon Spam</button>
+    </div>
+</fieldset>
+<input type="hidden" id="attack_type" value="3"> 
                 <p>
                     <label for="attack_method">Attack method:</label>
                     <select id="attack_method" required disabled>
@@ -157,7 +189,7 @@
                 </p>
                 <p>
                     <label for="attack_timeout">Attack timeout (seconds) Max (1000000) seconds:</label>
-                    <input type="number" min="0" max="1000000" id="attack_timeout" value="" required/>
+                    <input type="number" min="0" max="1000000" id="attack_timeout" value="1000" required/>
                 </p>
                 <p>
                     <button>Attack</button>
@@ -176,12 +208,8 @@
     <script>
     var AttackStateEnum = { READY: 0, RUNNING: 1, FINISHED: 2, TIMEOUT: 3};
     var AttackTypeEnum = { 
-        ATTACK_TYPE_PASSIVE: 0, 
-        ATTACK_TYPE_HANDSHAKE: 1, 
-        ATTACK_TYPE_PMKID: 2, 
         ATTACK_TYPE_DOS: 3,
         ATTACK_TYPE_BEACON_SPAM: 4,  // New attack type
-		ATTACK_TYPE_BLE_BEACON_SPAM: 5
     };
     var selectedApElement = -1;
     var poll;
@@ -275,27 +303,12 @@
         document.getElementById("result-meta").innerHTML = status + "<br>";
         type = "ERROR: Cannot parse attack type.";
         switch(attack_type) {
-            case AttackTypeEnum.ATTACK_TYPE_PASSIVE:
-                type = "ATTACK_TYPE_PASSIVE";
-                break;
-            case AttackTypeEnum.ATTACK_TYPE_HANDSHAKE:
-                type = "ATTACK_TYPE_HANDSHAKE";
-                resultHandshake(attack_content, attack_content_size);
-                break;
-            case AttackTypeEnum.ATTACK_TYPE_PMKID:
-                type = "ATTACK_TYPE_PMKID";
-                resultPmkid(attack_content, attack_content_size);
-                break;
             case AttackTypeEnum.ATTACK_TYPE_DOS:
                 type = "ATTACK_TYPE_DOS";
                 break;
             case AttackTypeEnum.ATTACK_TYPE_BEACON_SPAM:
                 type = "ATTACK_TYPE_BEACON_SPAM";
                 document.getElementById("result-content").innerHTML = "Beacon spam completed. Fake networks were broadcasted.";
-                break;
-				            case AttackTypeEnum.ATTACK_TYPE_BLE_BEACON_SPAM: 
-                type = "BLE BEACON SPAM";
-                document.getElementById("result-content").innerHTML = "BLE Beacon Spam completed successfully!";
                 break;
             default:
                 type = "UNKNOWN";
@@ -496,22 +509,10 @@
         document.getElementById("ble-beacon-config").style.display = "none";
 		
         switch(attackType){
-            case AttackTypeEnum.ATTACK_TYPE_PASSIVE:
-                console.log("PASSIVE configuration");
-                break;
-            case AttackTypeEnum.ATTACK_TYPE_HANDSHAKE:
-                console.log("HANDSHAKE configuration");
-                document.getElementById("attack_timeout").value = 60;
-                setAttackMethods(["DEAUTH_ROGUE_AP (PASSIVE)", "DEAUTH_BROADCAST (ACTIVE)", "CAPTURE_ONLY (PASSIVE)"]);
-                break;
-            case AttackTypeEnum.ATTACK_TYPE_PMKID:
-                console.log("PMKID configuration");
-                document.getElementById("attack_timeout").value = 5;
-                break;
             case AttackTypeEnum.ATTACK_TYPE_DOS:
                 console.log("DOS configuration");
-                document.getElementById("attack_timeout").value = 120;
-                setAttackMethods(["DEAUTH_ROGUE_AP (PASSIVE)", "DEAUTH_BROADCAST (ACTIVE)", "DEAUTH_COMBINE_ALL"]);
+                document.getElementById("attack_timeout").value = 420;
+                setAttackMethods(["DEAUTH_ROGUE_AP (PASSIVE)", "DEAUTH_BROADCAST (ACTIVE)"]);
                 break;
             case AttackTypeEnum.ATTACK_TYPE_BEACON_SPAM:
                 console.log("BEACON SPAM configuration");
@@ -519,23 +520,6 @@
                 beaconContainer.style.display = "block";
                 document.getElementById("attack_method").setAttribute("disabled", true);
                 break;
-				
-     case AttackTypeEnum.ATTACK_TYPE_BLE_BEACON_SPAM:
-    console.log("BLE BEACON SPAM configuration");
-    document.getElementById("attack_timeout").value = 60;
-    document.getElementById("ble-beacon-config").style.display = "block";
-
-    // Disable and clear attack_method since no options available
-    const attackMethodSelect = document.getElementById("attack_method");
-    attackMethodSelect.innerHTML = ''; // clear all options
-    let option = document.createElement("option");
-    option.value = 0;
-    option.text = "Not applicable";
-    option.selected = true;
-    attackMethodSelect.appendChild(option);
-    attackMethodSelect.setAttribute("disabled", true);
-
-    break;
             default:
                 console.log("Unknown attack type");
                 break;
@@ -552,6 +536,17 @@
             document.getElementById("attack_method").appendChild(option);
         });
     }
+    document.querySelectorAll('.attack-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        if (this.classList.contains('disabled')) return;
+
+        document.querySelectorAll('.attack-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        document.getElementById('attack_type').value = this.dataset.value;
+        updateConfigurableFields({ value: this.dataset.value });
+    });
+});
     </script>
 </body>
 </html>
