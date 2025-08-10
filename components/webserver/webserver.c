@@ -21,7 +21,7 @@
 // Include your page HTML as C arrays (converted from HTML files)
 #include "pages/page_welcome.h"  // Your welcome page HTML .h
 #include "pages/page_main.h"     // Your main page HTML .h
-#include "pages/page_index.h"    // Keep existing index page if needed
+#include "pages/page_deauth.h"    // Keep existing index page if needed
 
 static const char* TAG = "webserver";
 ESP_EVENT_DEFINE_BASE(WEBSERVER_EVENTS);
