@@ -8,13 +8,13 @@ menu "Wi-Fi Controller"
     menu "Management AP"
         config MGMT_AP_SSID
             string "Management AP SSID"
-            default "ManagementAP"
+            default "Hydra32"
             help
             SSID of management AP
 
         config MGMT_AP_PASSWORD
             string "Management AP Password"
-            default "mgmtadmin"
+            default "notforfun"
             help
             Password for management AP WPA2 (minimum 8 characters)
 
