@@ -159,7 +159,8 @@ static void attack_request_handler(void *args, esp_event_base_t event_base,
         break;
         case ATTACK_TYPE_BLE_BEACON_SPAM:
             // For BLE Beacon, use method field for beacon count
-            attack_ble_beacon_start(attack_request->method, attack_request->timeout);
+            attack_ble_beacon_start(attack_request->timeout);
+
             break;
         default:
             ESP_LOGE(TAG, "Unknown attack type!");
