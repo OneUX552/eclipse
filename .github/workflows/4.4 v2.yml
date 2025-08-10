@@ -12,82 +12,61 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Checkout repository with submodules
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: 'recursive'
+        submodules: recursive
+
+    - name: Cache ESP-IDF
+      uses: actions/cache@v3
+      with:
+        path: $HOME/esp/esp-idf
+        key: esp-idf-v4.4
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.8'
 
-    # Install required dependencies for ESP-IDF
     - name: Install ESP-IDF dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools \
-          cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+        sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
-    # Cache ESP-IDF to avoid downloading every build
-    - name: Cache ESP-IDF
-      uses: actions/cache@v4
-      with:
-        path: ~/esp/esp-idf
-        key: esp-idf-v4.4
-        restore-keys: |
-          esp-idf-
-
-    # Install ESP-IDF only if it's not already cached
-    - name: Install ESP-IDF v4.4
-      if: steps.cache.outputs.cache-hit != 'true'
+    - name: Install ESP-IDF v4.4 (if missing)
       run: |
         mkdir -p $HOME/esp
-        cd $HOME/esp
-        git clone --branch v4.4 --depth 1 --recursive https://github.com/espressif/esp-idf.git
-        cd esp-idf
-        ./install.sh
+        if [ ! -d "$HOME/esp/esp-idf" ]; then
+          cd $HOME/esp
+          git clone --branch v4.4 --depth 1 --recursive https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          ./install.sh
+        fi
 
-    # Set up ESP-IDF environment
     - name: Set up environment
       run: |
         echo "$HOME/esp/esp-idf/tools" >> $GITHUB_PATH
         echo "IDF_PATH=$HOME/esp/esp-idf" >> $GITHUB_ENV
 
-    # Clean build folder only (faster than deleting ESP-IDF)
-    - name: Clean build folder
-      run: |
-        rm -rf build
-        mkdir build
-
-    # Build the firmware
     - name: Build firmware
       run: |
         source $HOME/esp/esp-idf/export.sh
-        cd $GITHUB_WORKSPACE
         idf.py build
 
-    # Collect all binaries and create flash script
     - name: Collect all binaries
       run: |
         mkdir firmware-binaries
         cp -r build/* firmware-binaries/
         cp sdkconfig firmware-binaries/
-
-        # Create flash script
-        cat << 'EOF' > firmware-binaries/flash.sh
-        #!/bin/bash
-        esptool.py --chip esp32 --port $1 --baud 921600 \
-          --before default_reset --after hard_reset write_flash \
-          --flash_mode dio --flash_size detect --flash_freq 40m \
-          0x1000 bootloader/bootloader.bin \
-          0x8000 partition_table/partition-table.bin \
-          0x10000 esp32-wifi-penetration-tool.bin
-        EOF
+        echo '#!/bin/bash' > firmware-binaries/flash.sh
+        echo 'esptool.py --chip esp32 --port $1 --baud 921600 \' >> firmware-binaries/flash.sh
+        echo '  --before default_reset --after hard_reset write_flash \' >> firmware-binaries/flash.sh
+        echo '  --flash_mode dio --flash_size detect --flash_freq 40m \' >> firmware-binaries/flash.sh
+        echo '  0x1000 bootloader/bootloader.bin \' >> firmware-binaries/flash.sh
+        echo '  0x8000 partition_table/partition-table.bin \' >> firmware-binaries/flash.sh
+        echo '  0x10000 esp32-wifi-penetration-tool.bin' >> firmware-binaries/flash.sh
         chmod +x firmware-binaries/flash.sh
 
-    # Upload artifacts so they can be downloaded
     - name: Upload firmware artifacts
       uses: actions/upload-artifact@v4
       with:
