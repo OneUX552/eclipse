@@ -96,6 +96,6 @@ unsigned char page_page_welcome[] = {
   0X7D, 0XAD, 0X32, 0X4F, 0XC3, 0XBB, 0X66, 0X47, 0X8D, 0XCA, 0XFD, 0X1D,
   0XF8, 0X0F, 0XD6, 0X66, 0X05, 0X72, 0X1E, 0X0C, 0X00, 0X00
 };
-unsigned int page_page_welcome_len = 1102;
+unsigned int page_welcome_len = 1102;
 
 #endif
