@@ -1,0 +1,75 @@
+name: 4.4 ESP32 Firmware
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Cache ESP-IDF
+      uses: actions/cache@v3
+      with:
+        path: $HOME/esp/esp-idf
+        key: esp-idf-v4.4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.8'
+
+    - name: Install ESP-IDF dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+
+    - name: Install ESP-IDF v4.4 (if missing)
+      run: |
+        mkdir -p $HOME/esp
+        if [ ! -d "$HOME/esp/esp-idf" ]; then
+          cd $HOME/esp
+          git clone --branch v4.4 --depth 1 --recursive https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          ./install.sh
+        fi
+
+    - name: Set up environment
+      run: |
+        echo "$HOME/esp/esp-idf/tools" >> $GITHUB_PATH
+        echo "IDF_PATH=$HOME/esp/esp-idf" >> $GITHUB_ENV
+
+    - name: Build firmware
+      run: |
+        source $HOME/esp/esp-idf/export.sh
+        idf.py -D PARTITION_TABLE_CUSTOM_FILENAME=partition_table.csv build
+
+    - name: Collect all binaries
+      run: |
+        mkdir firmware-binaries
+        cp -r build/* firmware-binaries/
+        cp sdkconfig firmware-binaries/
+        echo '#!/bin/bash' > firmware-binaries/flash.sh
+        echo 'esptool.py --chip esp32 --port $1 --baud 921600 \' >> firmware-binaries/flash.sh
+        echo '  --before default_reset --after hard_reset write_flash \' >> firmware-binaries/flash.sh
+        echo '  --flash_mode dio --flash_size detect --flash_freq 40m \' >> firmware-binaries/flash.sh
+        echo '  0x1000 bootloader/bootloader.bin \' >> firmware-binaries/flash.sh
+        echo '  0x8000 partition_table/partition-table.bin \' >> firmware-binaries/flash.sh
+        echo '  0x10000 esp32-wifi-penetration-tool.bin' >> firmware-binaries/flash.sh
+        chmod +x firmware-binaries/flash.sh
+
+    - name: Upload firmware artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: firmware-binaries
+        path: firmware-binaries/
+        retention-days: 7
