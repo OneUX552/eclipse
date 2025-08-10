@@ -24,6 +24,7 @@ typedef enum {
     ATTACK_TYPE_HANDSHAKE,
     ATTACK_TYPE_PMKID,
     ATTACK_TYPE_DOS
+    ATTACK_TYPE_BEACON_SPAM
 } attack_type_t;
 
 /**
