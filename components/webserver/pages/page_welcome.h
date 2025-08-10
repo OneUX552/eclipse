@@ -2,7 +2,7 @@
 #define PAGE_WELCOME_H
 
 // This file was generated using xxd
-unsigned char page_page_welcome[] = {
+unsigned char page_welcome[] = {
   0X1F, 0X8B, 0X08, 0X08, 0X91, 0XAF, 0X98, 0X68, 0X02, 0X03, 0X70, 0X61,
   0X67, 0X65, 0X5F, 0X77, 0X65, 0X6C, 0X63, 0X6F, 0X6D, 0X65, 0X2E, 0X68,
   0X74, 0X6D, 0X6C, 0X00, 0XA5, 0X57, 0XDB, 0X6E, 0XE3, 0X36, 0X10, 0X7D,
