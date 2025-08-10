@@ -1,11 +1,23 @@
 idf_component_register(
-    SRCS "attack_dos.c" "attack_method.c" "main.c" "attack_handshake.c" "attack_pmkid.c" "attack.c" "attack_beacon_spam.c" "attack_ble_beacon.c"
-    INCLUDE_DIRS .
-    REQUIRES bt freertos esp_wifi
-     REQUIRES wifi_controller
-     REQUIRES frame_analyzer
-     REQUIRES hccapx_serializer
-     REQUIRES pcap_serializer
-     REQUIRES webserver
-     REQUIRES wsl_bypasser
+    SRCS 
+        "attack_dos.c"
+        "attack_method.c"
+        "main.c"
+        "attack_handshake.c"
+        "attack_pmkid.c"
+        "attack.c"
+        "attack_beacon_spam.c"
+        "attack_ble_beacon.c"
+    INCLUDE_DIRS 
+        .
+    REQUIRES 
+        bt
+        freertos
+        esp_wifi
+        wifi_controller
+        frame_analyzer
+        hccapx_serializer
+        pcap_serializer
+        webserver
+        wsl_bypasser
 )
