@@ -11,7 +11,7 @@
  * 
  * @param duration_seconds Duration of the attack in seconds.
  */
-void attack_beacon_spam_start(int duration_seconds);
+void attack_beacon_spam_start(uint8_t count)
 
 /**
  * @brief Stops BLE Beacon Spam attack.
