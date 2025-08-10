@@ -63,7 +63,7 @@ static httpd_uri_t uri_root_get = {
 static esp_err_t uri_main_get_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
-    return httpd_resp_send(req, (const char *)page_index, page_index_len);
+    return httpd_resp_send(req, (const char *)page_main, page_main_len);
 }
 
 static httpd_uri_t uri_main_get = {
