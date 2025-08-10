@@ -1,5 +1,5 @@
-#ifndef PAGE_PAGE_WELCOME_H
-#define PAGE_PAGE_WELCOME_H
+#ifndef PAGE_WELCOME_H
+#define PAGE_WELCOME_H
 
 // This file was generated using xxd
 unsigned char page_page_welcome[] = {
