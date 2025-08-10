@@ -1,452 +1,188 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>ESP32 Wi-Fi Penetration Tool</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Hydra32 </title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-primary: #000000;
-            --bg-secondary: #121212;
-            --bg-accent: #1a1a1a;
-            --bg-card: #0d0d0d;
-            --text-primary: #ffffff;
-            --text-secondary: #b3b3b3;
-            --accent-primary: #00ffcc;
-            --accent-secondary: #ff00aa;
-            --border-color: #333333;
-            --success: #00ff99;
-            --warning: #ffcc00;
-            --danger: #ff3366;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
-            font-family: 'Nunito', sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            padding: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(0, 40, 40, 0.2) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(40, 0, 40, 0.2) 0%, transparent 20%);
+            width: fit-content;
+            background-color: #000000; /* AMOLED pure black */
+            color: #eee; /* Light text */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                         Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 20px;
         }
-        
-        h1, h2, h3 {
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-            text-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
-        }
-        
-        h1 {
-            font-size: 2.2rem;
-            text-align: center;
-            margin: 1.5rem 0;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--border-color);
-        }
-        
-        section {
-            background-color: var(--bg-card);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--border-color);
-        }
-        
-        #errors {
-            background-color: rgba(255, 51, 102, 0.15);
-            border-left: 4px solid var(--danger);
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-        }
-        
-        #loading {
-            text-align: center;
-            padding: 40px;
-            font-size: 1.2rem;
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .card-title {
-            font-size: 1.5rem;
-            color: var(--accent-primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .card-title i {
-            font-size: 1.8rem;
-        }
-        
-        /* Table styling */
-        table {
-            width: 100%;
+        table, tr, th {
+            border: 1px solid #444; /* softer border */
             border-collapse: collapse;
-            margin: 20px 0;
-            border-radius: 10px;
-            overflow: hidden;
-            background-color: var(--bg-accent);
-        }
-        
-        th {
-            background-color: var(--bg-secondary);
-            color: var(--accent-primary);
-            font-weight: 700;
-            padding: 15px;
-            text-align: left;
-        }
-        
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-secondary);
-        }
-        
-        tr:hover, tr.selected {
-            background-color: rgba(0, 255, 204, 0.1);
-            cursor: pointer;
-        }
-        
-        tr.selected {
-            background-color: rgba(0, 255, 204, 0.15);
-        }
-        
-        /* Form styling */
-        fieldset {
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 25px;
-            background-color: var(--bg-accent);
-        }
-        
-        legend {
-            padding: 0 10px;
-            font-weight: 700;
-            color: var(--accent-primary);
-            font-size: 1.2rem;
-        }
-        
-        p {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        
-        select, input {
-            width: 100%;
-            padding: 12px 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background-color: var(--bg-secondary);
-            color: var(--text-primary);
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        select:focus, input:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px rgba(0, 255, 204, 0.2);
-        }
-        
-        select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ffcc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1em;
-        }
-        
-        /* Button styling */
-        button {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            color: #000;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            min-width: 120px;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.3);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .btn-secondary {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger), #ff0066);
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        /* Status indicators */
-        .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            background-color: var(--bg-secondary);
-        }
-        
-        .status-indicator::before {
-            content: '';
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        
-        .status-ready::before {
-            background-color: var(--success);
-        }
-        
-        .status-running::before {
-            background-color: var(--warning);
-        }
-        
-        .status-finished::before {
-            background-color: var(--accent-primary);
-        }
-        
-        .status-timeout::before {
-            background-color: var(--danger);
-        }
-        
-        /* Result styling */
-        #result-content {
-            background-color: var(--bg-secondary);
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            font-family: monospace;
-            white-space: pre-wrap;
-            overflow-x: auto;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        #result-content code {
-            color: var(--accent-primary);
-            background-color: rgba(0, 0, 0, 0.3);
-            padding: 2px 5px;
-            border-radius: 4px;
-        }
-        
-        /* Running section */
-        #running {
             text-align: center;
-            padding: 40px;
         }
-        
-        .running-icon {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            color: var(--warning);
+        th, td {
+            padding:10px;
         }
-        
-        .running-message {
-            font-size: 1.4rem;
-            margin-bottom: 20px;
+        tr:hover, tr.selected {
+            background-color: #1a73e8; /* subtle blue highlight */
+            cursor:pointer;
+            color: #fff;
         }
-        
-        .running-time {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-weight: 600;
+            border-radius: 5px;
+            cursor: pointer;
         }
-        
-        .deauth-warning {
-            background-color: rgba(255, 51, 102, 0.2);
-            border: 1px solid var(--danger);
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-            color: var(--danger);
+        button:hover {
+            background-color: #155ab6;
+        }
+        select, input[type=number] {
+            background-color: #121212;
+            color: #eee;
+            border: 1px solid #444;
+            padding: 5px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        label {
             font-weight: 600;
         }
-        
-        /* Loading animation */
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255, 255, 255, 0.1);
-            border-top: 5px solid var(--accent-primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+        fieldset {
+            border: 1px solid #444;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        legend {
+            font-weight: 700;
+            padding: 0 10px;
         }
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            section {
-                padding: 15px;
-            }
-            
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            button {
-                width: 100%;
-            }
+        section {
+            margin-bottom: 20px;
         }
+        a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+  h1 {
+    font-weight: bold;
+    font-size: 3em;
+    color: #fff;
+    text-align: center;
+    animation: rgbGlow 3s infinite alternate;
+  }
+
+  @keyframes rgbGlow {
+    0% {
+      text-shadow:
+        0 0 5px red,
+        0 0 10px red,
+        0 0 20px red,
+        0 0 40px red;
+    }
+    33% {
+      text-shadow:
+        0 0 5px green,
+        0 0 10px green,
+        0 0 20px green,
+        0 0 40px green;
+    }
+    66% {
+      text-shadow:
+        0 0 5px blue,
+        0 0 10px blue,
+        0 0 20px blue,
+        0 0 40px blue;
+    }
+    100% {
+      text-shadow:
+        0 0 5px red,
+        0 0 10px red,
+        0 0 20px red,
+        0 0 40px red;
+    }
+  }
     </style>
 </head>
 <body onLoad="getStatus()">
-    <h1>ESP32 Wi-Fi Penetration Tool</h1>
-    
+    <h1>Hydra32 | Cyberkit </h1>
     <section id="errors"></section>
-    
-    <section id="loading">
-        <div class="spinner"></div>
-        <p>Initializing system... Please wait</p>
-    </section>
-    
+    <section id="loading">Loading... Please wait</section>
     <section id="ready" style="display: none;">
-        <div class="card-header">
-            <h2 class="card-title">Attack Configuration</h2>
-            <span class="status-indicator status-ready">READY</span>
-        </div>
-        
-        <fieldset>
-            <legend>Select Target Network</legend>
-            <table id="ap-list">
-                <thead>
-                    <tr>
-                        <th>SSID</th>
-                        <th>BSSID</th>
-                        <th>Signal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- AP list will be populated here -->
-                </tbody>
-            </table>
-            <p>
-                <button type="button" onClick="refreshAps()" class="btn-secondary">Refresh Networks</button>
-            </p>
-        </fieldset>
-        
+        <h2>Attack configuration</h2>
         <form onSubmit="runAttack(); return false;">
             <fieldset>
-                <legend>Attack Parameters</legend>
+                <legend>Select target</legend>
+                <table id="ap-list"></table>
                 <p>
-                    <label for="attack_type">Attack Type:</label>
+                    <button type="button" onClick="refreshAps()">Refresh</button>
+                </p>
+            </fieldset>
+            <fieldset>
+                <legend>Attack configuration</legend>
+                <p>
+                    <label for="attack_type">Attack type:</label>
                     <select id="attack_type" onChange="updateConfigurableFields(this)" required>
-                        <option value="0" title="This type is not implemented yet." disabled>Passive Scanning</option>
-                        <option value="1">Handshake Capture</option>
-                        <option value="2" selected>PMKID Capture</option>
-                        <option value="3">Deauthentication Attack</option>
+                        <option value="0" title="This type is not implemented yet." disabled>ATTACK_TYPE_PASSIVE</option>
+                        <option value="1">HANDSHAKE (BETA)</option>
+                        <option value="2" selected>PMKID</option>
+                        <option value="3">DEAUTHENTICATION (DOS)</option>
+                        <option value="4">WIFI BEACON SPAM</option> <!-- New Beacon Spam option -->
+						<option value="5">ATTACK_TYPE_BLE_BEACON_SPAM</option>
                     </select>
                 </p>
                 <p>
-                    <label for="attack_method">Attack Method:</label>
+                    <label for="attack_method">Attack method:</label>
                     <select id="attack_method" required disabled>
-                        <option value="" selected disabled hidden>Select attack method</option>
+                        <option value="" selected disabled hidden>NOT AVAILABLE</option>
                     </select>
                 </p>
-                <p id="timeout-container">
-                    <label for="attack_timeout">Attack Duration (seconds):</label>
-                    <input type="number" min="0" max="255" id="attack_timeout" value="" required/>
+				<p id="ble-beacon-config" style="display: none;">
+                    <label for="beacon_count">Number of beacons:</label>
+                    <input type="number" min="1" max="100" id="beacon_count" value="20">
+                    
+                    <div class="warning">
+                        <strong>Note:</strong> BLE Beacon Spam will temporarily disable Wi-Fi management interface.
+                        You'll need to reconnect after the attack completes.
+                    </div>
                 </p>
-                <p class="action-buttons">
-                    <button type="submit">Start Attack</button>
-                    <button type="button" onClick="resetAttack()" class="btn-secondary">Reset Device</button>
+                <p id="beacon-count-container" style="display: none;">
+                    <label for="beacon_count">Number of fake networks:</label>
+                    <input type="number" min="1" max="100" id="beacon_count" value="20"/>
+                </p>
+                <p>
+                    <label for="attack_timeout">Attack timeout (seconds) Max (1000000) seconds:</label>
+                    <input type="number" min="0" max="1000000" id="attack_timeout" value="" required/>
+                </p>
+                <p>
+                    <button>Attack</button>
                 </p>
             </fieldset>
         </form>
     </section>
-    
     <section id="running" style="display: none;">
-        <div class="running-icon">⌛</div>
-        <div class="running-message">Attack in Progress</div>
-        <div class="running-time">Time elapsed: <span id="running-progress"></span></div>
-        <div id="deauth-warning" style="display: none;" class="deauth-warning">
-            ⚠️ Deauth attack is running indefinitely. To stop, press RST button or unplug device.
-        </div>
+        Time elapsed: <span id="running-progress"></span>
     </section>
-    
     <section id="result" style="display: none;">
-        <div class="card-header">
-            <h2 class="card-title">Attack Results</h2>
-            <span id="result-status" class="status-indicator"></span>
-        </div>
-        
-        <div id="result-meta"></div>
+        <div id="result-meta">Loading result.. Please wait</div>
         <div id="result-content"></div>
-        
-        <p class="action-buttons">
-            <button type="button" onClick="resetAttack()">New Attack</button>
-            <button type="button" onClick="location.reload()" class="btn-secondary">Reload Interface</button>
-        </p>
+        <button type="button" onClick="resetAttack()">New attack</button>
     </section>
-    
     <script>
     var AttackStateEnum = { READY: 0, RUNNING: 1, FINISHED: 2, TIMEOUT: 3};
-    var AttackTypeEnum = { ATTACK_TYPE_PASSIVE: 0, ATTACK_TYPE_HANDSHAKE: 1, ATTACK_TYPE_PMKID: 2, ATTACK_TYPE_DOS: 3};
+    var AttackTypeEnum = { 
+        ATTACK_TYPE_PASSIVE: 0, 
+        ATTACK_TYPE_HANDSHAKE: 1, 
+        ATTACK_TYPE_PMKID: 2, 
+        ATTACK_TYPE_DOS: 3,
+        ATTACK_TYPE_BEACON_SPAM: 4,  // New attack type
+		ATTACK_TYPE_BLE_BEACON_SPAM: 5
+    };
     var selectedApElement = -1;
     var poll;
     var poll_interval = 1000;
@@ -454,7 +190,6 @@
     var running_poll_interval = 1000;
     var attack_timeout = 0;
     var time_elapsed = 0;
-    var currentAttackType = -1;
     var defaultResultContent = document.getElementById("result").innerHTML;
     var defaultAttackMethods = document.getElementById("attack_method").outerHTML;
     
@@ -494,7 +229,7 @@
         };
         oReq.onerror = function() {
             console.log("Request error");
-            document.getElementById("errors").innerHTML = "Cannot reach ESP32. Check that you are connected to management AP. You might get disconnected during attack.";
+            document.getElementById("errors").innerHTML = "Failed to connect Hydra32 firmware. Make sure the device is powered on.";
             getStatus();
         };
         oReq.ontimeout = function() {
@@ -515,26 +250,16 @@
     function showRunning(){
         hideAllSections();
         document.getElementById("running").style.display = "block";
-        // Show deauth warning if it's a deauth attack
-        if(currentAttackType === AttackTypeEnum.ATTACK_TYPE_DOS) {
-            document.getElementById("deauth-warning").style.display = "block";
-        }
     }
     
     function countProgress(){
-        if(time_elapsed >= attack_timeout && attack_timeout > 0){
+        if(time_elapsed >= attack_timeout){
             document.getElementById("errors").innerHTML = "Please reconnect to management AP";
             document.getElementById("errors").style.display = "block";
             clearInterval(running_poll);
         }
-        
-        // For deauth attack (DOS), show indefinite message
-        if(currentAttackType === AttackTypeEnum.ATTACK_TYPE_DOS) {
-            document.getElementById("running-progress").innerHTML = "Running until device reset";
-        } else {
-            document.getElementById("running-progress").innerHTML = time_elapsed + "/" + attack_timeout + "s";
-            time_elapsed++;
-        }
+        document.getElementById("running-progress").innerHTML = time_elapsed + "/" + attack_timeout + "s";
+        time_elapsed++;
     }
     
     function showAttackConfig(){
@@ -547,73 +272,66 @@
         clearInterval(poll);
         document.getElementById("result").innerHTML = defaultResultContent;
         document.getElementById("result").style.display = "block";
-        
-        // Set status indicator
-        const resultStatus = document.getElementById("result-status");
-        resultStatus.textContent = status;
-        resultStatus.classList.add(status === "FINISHED" ? "status-finished" : "status-timeout");
-        
-        document.getElementById("result-meta").innerHTML = "<strong>Attack Status:</strong> " + status + "<br>";
+        document.getElementById("result-meta").innerHTML = status + "<br>";
         type = "ERROR: Cannot parse attack type.";
         switch(attack_type) {
             case AttackTypeEnum.ATTACK_TYPE_PASSIVE:
-                type = "Passive Scanning";
+                type = "ATTACK_TYPE_PASSIVE";
                 break;
             case AttackTypeEnum.ATTACK_TYPE_HANDSHAKE:
-                type = "Handshake Capture";
+                type = "ATTACK_TYPE_HANDSHAKE";
                 resultHandshake(attack_content, attack_content_size);
                 break;
             case AttackTypeEnum.ATTACK_TYPE_PMKID:
-                type = "PMKID Capture";
+                type = "ATTACK_TYPE_PMKID";
                 resultPmkid(attack_content, attack_content_size);
                 break;
             case AttackTypeEnum.ATTACK_TYPE_DOS:
-                type = "Deauthentication Attack";
-                document.getElementById("result-content").innerHTML = "Deauth attack completed. Target network should be disrupted.";
+                type = "ATTACK_TYPE_DOS";
+                break;
+            case AttackTypeEnum.ATTACK_TYPE_BEACON_SPAM:
+                type = "ATTACK_TYPE_BEACON_SPAM";
+                document.getElementById("result-content").innerHTML = "Beacon spam completed. Fake networks were broadcasted.";
+                break;
+				            case AttackTypeEnum.ATTACK_TYPE_BLE_BEACON_SPAM: 
+                type = "BLE BEACON SPAM";
+                document.getElementById("result-content").innerHTML = "BLE Beacon Spam completed successfully!";
                 break;
             default:
                 type = "UNKNOWN";
         }
-        document.getElementById("result-meta").innerHTML += "<strong>Attack Type:</strong> " + type + "<br>";
+        document.getElementById("result-meta").innerHTML += type + "<br>";
     }
     
     function refreshAps() {
-        document.getElementById("ap-list").innerHTML = "<tr><td colspan='3'>Scanning networks... Please wait</td></tr>";
+        document.getElementById("ap-list").innerHTML = "Loading (this may take a while)...";
         var oReq = new XMLHttpRequest();
         oReq.onload = function() {
-            var tableBody = "<thead><tr><th>SSID</th><th>BSSID</th><th>Signal</th></tr></thead><tbody>";
+            document.getElementById("ap-list").innerHTML = "<th>SSID</th><th>BSSID</th><th>RSSI</th>";
             var arrayBuffer = oReq.response;
             if(arrayBuffer) {
                 var byteArray = new Uint8Array(arrayBuffer);
                 for  (let i = 0; i < byteArray.byteLength; i = i + 40) {
-                    var ssid = new TextDecoder("utf-8").decode(byteArray.subarray(i + 0, i + 32)).trim();
-                    var bssid = "";
+                    var tr = document.createElement('tr');
+                    tr.setAttribute("id", i / 40);
+                    tr.setAttribute("onClick", "selectAp(this)");
+                    var td_ssid = document.createElement('td');
+                    var td_rssi = document.createElement('td');
+                    var td_bssid = document.createElement('td');
+                    td_ssid.innerHTML = new TextDecoder("utf-8").decode(byteArray.subarray(i + 0, i + 32));
+                    tr.appendChild(td_ssid);
                     for(let j = 0; j < 6; j++){
-                        bssid += uint8ToHex(byteArray[i + 33 + j]) + ":";
+                        td_bssid.innerHTML += uint8ToHex(byteArray[i + 33 + j]) + ":";
                     }
-                    bssid = bssid.slice(0, -1); // Remove trailing colon
-                    var rssi = byteArray[i + 39] - 255;
-                    
-                    // Add signal strength indicator
-                    var signalStrength = "";
-                    if(rssi >= -50) signalStrength = "Excellent";
-                    else if(rssi >= -60) signalStrength = "Very Good";
-                    else if(rssi >= -70) signalStrength = "Good";
-                    else if(rssi >= -80) signalStrength = "Weak";
-                    else signalStrength = "Very Weak";
-                    
-                    tableBody += `<tr id="${i / 40}" onClick="selectAp(this)">
-                        <td>${ssid || "<em>Hidden Network</em>"}</td>
-                        <td><code>${bssid}</code></td>
-                        <td>${rssi} dBm <span style="color:#888">(${signalStrength})</span></td>
-                    </tr>`;
+                    tr.appendChild(td_bssid);
+                    td_rssi.innerHTML = byteArray[i + 39] - 255;
+                    tr.appendChild(td_rssi);
+                    document.getElementById("ap-list").appendChild(tr);
                 }
-                tableBody += "</tbody>";
-                document.getElementById("ap-list").innerHTML = tableBody;
             }
         };
         oReq.onerror = function() {
-            document.getElementById("ap-list").innerHTML = "<tr><td colspan='3'>Error scanning networks. Please try again.</td></tr>";
+            document.getElementById("ap-list").innerHTML = "ERROR";
         };
         oReq.open("GET", "http://192.168.4.1/ap-list", true);
         oReq.responseType = "arraybuffer";
@@ -630,34 +348,69 @@
     }
     
     function runAttack() {
-        if(selectedApElement == -1){
+        const attackType = parseInt(document.getElementById("attack_type").value);
+        
+        // Beacon spam doesn't require a target AP
+        if(selectedApElement == -1 && attackType !== AttackTypeEnum.ATTACK_TYPE_BEACON_SPAM){
             console.log("No AP selected. Attack not started.");
-            document.getElementById("errors").innerHTML = "⚠️ No AP selected. Please select a target network.";
-            document.getElementById("errors").style.display = "block";
+            document.getElementById("errors").innerHTML = "No AP selected. Attack not started.";
             return;
         }
+		 // BLE Beacon doesn't require AP selection
+        if (selectedApElement == -1 && attackType !== AttackTypeEnum.ATTACK_TYPE_BLE_BEACON_SPAM) {
+            document.getElementById("errors").innerHTML = "No AP selected. Please select a target network.";
+            return;
+        }
+
         
-        currentAttackType = parseInt(document.getElementById("attack_type").value);
         hideAllSections();
         document.getElementById("running").style.display = "block";
         
-        // For DOS attacks, set timeout to 0 (infinite)
-        const timeoutValue = (currentAttackType === AttackTypeEnum.ATTACK_TYPE_DOS) ? 0 : 
-                            parseInt(document.getElementById("attack_timeout").value);
+        var arrayBuffer;
+        var uint8Array;
         
-        var arrayBuffer = new ArrayBuffer(4);
-        var uint8Array = new Uint8Array(arrayBuffer);
-        uint8Array[0] = parseInt(selectedApElement.id);
-        uint8Array[1] = currentAttackType;
-        uint8Array[2] = parseInt(document.getElementById("attack_method").value);
-        uint8Array[3] = timeoutValue;
-        
+        if (attackType === AttackTypeEnum.ATTACK_TYPE_BEACON_SPAM) {
+            // For beacon spam, we send the beacon count instead of AP index
+            const beaconCount = parseInt(document.getElementById("beacon_count").value) || 20;
+            arrayBuffer = new ArrayBuffer(4);
+            uint8Array = new Uint8Array(arrayBuffer);
+            uint8Array[0] = 0; // Dummy AP index for beacon spam
+            uint8Array[1] = attackType;
+            uint8Array[2] = beaconCount; // Beacon count in method field
+            uint8Array[3] = parseInt(document.getElementById("attack_timeout").value);
+        } else {
+            // For other attacks
+            arrayBuffer = new ArrayBuffer(4);
+            uint8Array = new Uint8Array(arrayBuffer);
+            uint8Array[0] = parseInt(selectedApElement.id);
+            uint8Array[1] = attackType;
+            uint8Array[2] = parseInt(document.getElementById("attack_method").value);
+            uint8Array[3] = parseInt(document.getElementById("attack_timeout").value);
+        }
+                if (attackType === AttackTypeEnum.ATTACK_TYPE_BLE_BEACON_SPAM) {
+            // For BLE Beacon, we send the beacon count in the AP ID field
+            arrayBuffer = new ArrayBuffer(4);
+            uint8Array = new Uint8Array(arrayBuffer);
+            uint8Array[0] = parseInt(document.getElementById("beacon_count").value) || 20;
+            uint8Array[1] = attackType;
+            uint8Array[2] = 0; // Not used for BLE
+            uint8Array[3] = parseInt(document.getElementById("attack_timeout").value);
+        } else {
+            // For other attacks
+            arrayBuffer = new ArrayBuffer(4);
+            uint8Array = new Uint8Array(arrayBuffer);
+            uint8Array[0] = parseInt(selectedApElement.id);
+            uint8Array[1] = attackType;
+            uint8Array[2] = parseInt(document.getElementById("attack_method").value);
+            uint8Array[3] = parseInt(document.getElementById("attack_timeout").value);
+        }
+		
         var oReq = new XMLHttpRequest();
         oReq.open("POST", "http://192.168.4.1/run-attack", true);
         oReq.send(arrayBuffer);
         
         getStatus();
-        attack_timeout = timeoutValue;
+        attack_timeout = parseInt(document.getElementById("attack_timeout").value);
         time_elapsed = 0;
         running_poll = setInterval(countProgress, running_poll_interval);
     }
@@ -700,12 +453,12 @@
             pmkid += uint8ToHex(attack_content[index + i]);
         }
         document.getElementById("result-content").innerHTML = "";
-        document.getElementById("result-content").innerHTML += "<strong>MAC AP:</strong> <code>" + mac_ap + "</code><br>";
-        document.getElementById("result-content").innerHTML += "<strong>MAC STA:</strong> <code>" + mac_sta + "</code><br>";
-        document.getElementById("result-content").innerHTML += "<strong>(E)SSID:</strong> <code>" + ssid + "</code> (" + ssid_text + ")<br>";
+        document.getElementById("result-content").innerHTML += "MAC AP: <code>" + mac_ap + "</code><br>";
+        document.getElementById("result-content").innerHTML += "MAC STA: <code>" + mac_sta + "</code><br>";
+        document.getElementById("result-content").innerHTML += "(E)SSID: <code>" + ssid + "</code> (" + ssid_text + ")";
         document.getElementById("result-content").innerHTML += "<code>" + pmkid + "</code><br>";
-        document.getElementById("result-content").innerHTML += "<br><strong>Hashcat ready format:</strong><br>";
-        document.getElementById("result-content").innerHTML += "<code>WPA*01*" + pmkid.split("<br>").join("") + "*" + mac_ap + "*" + mac_sta  + "*" + ssid  + "</code><br>";
+        document.getElementById("result-content").innerHTML += "<br>Hashcat ready format:"
+        document.getElementById("result-content").innerHTML += "<code>" + pmkid + "*" + mac_ap + "*" + mac_sta  + "*" + ssid  + "</code><br>";
     }
     
     function resultHandshake(attack_content, attack_content_size){
@@ -713,17 +466,11 @@
         var pcap_link = document.createElement("a");
         pcap_link.setAttribute("href", "capture.pcap");
         pcap_link.text = "Download PCAP file";
-        pcap_link.className = "btn-secondary";
-        pcap_link.style.marginRight = "10px";
-        
         var hccapx_link = document.createElement("a");
         hccapx_link.setAttribute("href", "capture.hccapx");
         hccapx_link.text = "Download HCCAPX file";
-        hccapx_link.className = "btn-secondary";
-        
-        document.getElementById("result-content").innerHTML += "<p>Handshake capture successful. Download files for password cracking:</p>";
-        document.getElementById("result-content").innerHTML += "<div style='margin:15px 0;'>" + pcap_link.outerHTML + hccapx_link.outerHTML + "</div>";
-        
+        document.getElementById("result-content").innerHTML += "<p>" + pcap_link.outerHTML + "</p>";
+        document.getElementById("result-content").innerHTML += "<p>" + hccapx_link.outerHTML + "</p>";
         var handshakes = "";
         for(let i = 0; i < attack_content_size; i = i + 1) {
             handshakes += uint8ToHex(attack_content[i]);
@@ -740,52 +487,69 @@
     
     function updateConfigurableFields(el){
         document.getElementById("attack_method").outerHTML = defaultAttackMethods;
-        const timeoutContainer = document.getElementById("timeout-container");
+        const beaconContainer = document.getElementById("beacon-count-container");
         const attackType = parseInt(el.value);
         
+        // Reset visibility
+        beaconContainer.style.display = "none";
+        document.getElementById("attack_method").removeAttribute("disabled");
+        document.getElementById("ble-beacon-config").style.display = "none";
+		
         switch(attackType){
             case AttackTypeEnum.ATTACK_TYPE_PASSIVE:
                 console.log("PASSIVE configuration");
-                timeoutContainer.style.display = "block";
                 break;
             case AttackTypeEnum.ATTACK_TYPE_HANDSHAKE:
                 console.log("HANDSHAKE configuration");
                 document.getElementById("attack_timeout").value = 60;
-                timeoutContainer.style.display = "block";
                 setAttackMethods(["DEAUTH_ROGUE_AP (PASSIVE)", "DEAUTH_BROADCAST (ACTIVE)", "CAPTURE_ONLY (PASSIVE)"]);
                 break;
             case AttackTypeEnum.ATTACK_TYPE_PMKID:
                 console.log("PMKID configuration");
                 document.getElementById("attack_timeout").value = 5;
-                timeoutContainer.style.display = "block";
                 break;
             case AttackTypeEnum.ATTACK_TYPE_DOS:
                 console.log("DOS configuration");
-                // Set to 0 for infinite, but hide the timeout field
-                document.getElementById("attack_timeout").value = 0;
-                timeoutContainer.style.display = "none";
+                document.getElementById("attack_timeout").value = 120;
                 setAttackMethods(["DEAUTH_ROGUE_AP (PASSIVE)", "DEAUTH_BROADCAST (ACTIVE)", "DEAUTH_COMBINE_ALL"]);
                 break;
+            case AttackTypeEnum.ATTACK_TYPE_BEACON_SPAM:
+                console.log("BEACON SPAM configuration");
+                document.getElementById("attack_timeout").value = 30;
+                beaconContainer.style.display = "block";
+                document.getElementById("attack_method").setAttribute("disabled", true);
+                break;
+				
+     case AttackTypeEnum.ATTACK_TYPE_BLE_BEACON_SPAM:
+    console.log("BLE BEACON SPAM configuration");
+    document.getElementById("attack_timeout").value = 60;
+    document.getElementById("ble-beacon-config").style.display = "block";
+
+    // Disable and clear attack_method since no options available
+    const attackMethodSelect = document.getElementById("attack_method");
+    attackMethodSelect.innerHTML = ''; // clear all options
+    let option = document.createElement("option");
+    option.value = 0;
+    option.text = "Not applicable";
+    option.selected = true;
+    attackMethodSelect.appendChild(option);
+    attackMethodSelect.setAttribute("disabled", true);
+
+    break;
             default:
                 console.log("Unknown attack type");
-                timeoutContainer.style.display = "block";
                 break;
         }
     }
     
     function setAttackMethods(attackMethodsArray){
-        const methodSelect = document.getElementById("attack_method");
-        methodSelect.removeAttribute("disabled");
-        
-        // Clear existing options
-        methodSelect.innerHTML = "";
-        
+        document.getElementById("attack_method").removeAttribute("disabled");
         attackMethodsArray.forEach(function(method, index){
             let option = document.createElement("option");
             option.value = index;
             option.text = method;
-            if(index === 0) option.selected = true;
-            methodSelect.appendChild(option);
+            option.selected = true;
+            document.getElementById("attack_method").appendChild(option);
         });
     }
     </script>
