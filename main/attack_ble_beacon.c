@@ -11,6 +11,8 @@ static const char *TAG = "ble_beacon_spam";
 
 #define BEACON_ADV_INTERVAL 0x20 // 20ms units (0x20 = 32 * 0.625ms = 20ms)
 
+static TaskHandle_t ble_beacon_task_handle = NULL;
+
 static uint8_t vendorList[] = {
     0x4C, 0x00, // Apple (LSB first for manufacturer id 0x004C)
     0x50, 0x00, // Samsung
@@ -25,68 +27,48 @@ static void generate_random_uuid(uint8_t *uuid) {
     for (int i = 0; i < 16; i++) {
         uuid[i] = esp_random() & 0xFF;
     }
-    // Set UUID version and variant bits (version 4 UUID)
     uuid[6] = (uuid[6] & 0x0F) | 0x40; // Version 4
     uuid[8] = (uuid[8] & 0x3F) | 0x80; // Variant bits
 }
 
 static void prepare_beacon_data(uint8_t *adv_data, uint8_t *length) {
-    // Apple iBeacon format
-    // Flags
-    uint8_t flags[] = {
-        0x02, 0x01, 0x06
-    };
-
-    // Length of Manufacturer data (0x1A), Type (0xFF), Manufacturer ID (2 bytes),
-    // iBeacon type (0x02), Length (0x15), UUID(16 bytes), Major(2 bytes), Minor(2 bytes), Tx Power(1 byte)
+    uint8_t flags[] = { 0x02, 0x01, 0x06 };
     uint8_t mfg_data[25];
 
     uint16_t manuf_id_idx = (esp_random() % VENDOR_COUNT) * 2;
-    mfg_data[0] = vendorList[manuf_id_idx];     // Manufacturer ID LSB
-    mfg_data[1] = vendorList[manuf_id_idx + 1]; // Manufacturer ID MSB
-
-    mfg_data[2] = 0x02;  // iBeacon type
-    mfg_data[3] = 0x15;  // iBeacon data length
-
+    mfg_data[0] = vendorList[manuf_id_idx];
+    mfg_data[1] = vendorList[manuf_id_idx + 1];
+    mfg_data[2] = 0x02;  
+    mfg_data[3] = 0x15;  
     generate_random_uuid(&mfg_data[4]);
-
-    // Random Major and Minor
     mfg_data[20] = (esp_random() & 0xFF);
     mfg_data[21] = (esp_random() & 0xFF);
     mfg_data[22] = (esp_random() & 0xFF);
     mfg_data[23] = (esp_random() & 0xFF);
+    mfg_data[24] = 0xC5;
 
-    mfg_data[24] = 0xC5; // Measured Power (Tx Power)
-
-    // Now prepare the advertising data buffer
     int pos = 0;
-
-    // Copy flags
     memcpy(adv_data + pos, flags, sizeof(flags));
     pos += sizeof(flags);
 
-    // Manufacturer data AD structure
-    adv_data[pos++] = 0x1A; // Length of this AD structure (26 bytes)
-    adv_data[pos++] = 0xFF; // Manufacturer specific data type
-
+    adv_data[pos++] = 0x1A;
+    adv_data[pos++] = 0xFF;
     memcpy(adv_data + pos, mfg_data, sizeof(mfg_data));
     pos += sizeof(mfg_data);
 
     *length = pos;
 }
 
-void ble_beacon_spam_task(void *param) {
+static void ble_beacon_spam_task(void *param) {
     int duration = (int)param;
-
     esp_err_t ret;
-
-    // Init BLE controller and Bluedroid stack
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret) {
-        ESP_LOGE(TAG, "Bluetooth controller initialize failed: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Bluetooth controller init failed: %s", esp_err_to_name(ret));
         vTaskDelete(NULL);
+        ble_beacon_task_handle = NULL;
         return;
     }
 
@@ -94,13 +76,15 @@ void ble_beacon_spam_task(void *param) {
     if (ret) {
         ESP_LOGE(TAG, "Bluetooth controller enable failed: %s", esp_err_to_name(ret));
         vTaskDelete(NULL);
+        ble_beacon_task_handle = NULL;
         return;
     }
 
     ret = esp_bluedroid_init();
     if (ret) {
-        ESP_LOGE(TAG, "Bluedroid stack init failed: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Bluedroid init failed: %s", esp_err_to_name(ret));
         vTaskDelete(NULL);
+        ble_beacon_task_handle = NULL;
         return;
     }
 
@@ -108,10 +92,10 @@ void ble_beacon_spam_task(void *param) {
     if (ret) {
         ESP_LOGE(TAG, "Bluedroid enable failed: %s", esp_err_to_name(ret));
         vTaskDelete(NULL);
+        ble_beacon_task_handle = NULL;
         return;
     }
 
-    // Prepare advertising data
     uint8_t adv_data[31];
     uint8_t adv_data_len = 0;
     prepare_beacon_data(adv_data, &adv_data_len);
@@ -123,8 +107,8 @@ void ble_beacon_spam_task(void *param) {
         .min_interval = 0x0006, 
         .max_interval = 0x0010,
         .appearance = 0x00,
-        .manufacturer_len = adv_data_len - 3, // exclude flags (3 bytes)
-        .p_manufacturer_data = &adv_data[3], // manufacturer data starts after flags
+        .manufacturer_len = adv_data_len - 3,
+        .p_manufacturer_data = &adv_data[3],
         .service_data_len = 0,
         .p_service_data = NULL,
         .service_uuid_len = 0,
@@ -136,6 +120,7 @@ void ble_beacon_spam_task(void *param) {
     if (ret) {
         ESP_LOGE(TAG, "Config adv data failed: %s", esp_err_to_name(ret));
         vTaskDelete(NULL);
+        ble_beacon_task_handle = NULL;
         return;
     }
 
@@ -152,6 +137,7 @@ void ble_beacon_spam_task(void *param) {
     if (ret) {
         ESP_LOGE(TAG, "Start advertising failed: %s", esp_err_to_name(ret));
         vTaskDelete(NULL);
+        ble_beacon_task_handle = NULL;
         return;
     }
 
@@ -168,9 +154,22 @@ void ble_beacon_spam_task(void *param) {
 
     ESP_LOGI(TAG, "BLE Beacon spam finished");
 
+    ble_beacon_task_handle = NULL;
     vTaskDelete(NULL);
 }
 
 void attack_ble_beacon_start(int duration_seconds) {
-    xTaskCreate(ble_beacon_spam_task, "ble_beacon_spam", 4096, (void*)duration_seconds, 5, NULL);
+    if (ble_beacon_task_handle != NULL) {
+        ESP_LOGW(TAG, "BLE Beacon spam task already running");
+        return;
+    }
+    xTaskCreate(ble_beacon_spam_task, "ble_beacon_spam", 4096, (void*)duration_seconds, 5, &ble_beacon_task_handle);
+}
+
+void attack_ble_beacon_stop() {
+    if (ble_beacon_task_handle != NULL) {
+        vTaskDelete(ble_beacon_task_handle);
+        ble_beacon_task_handle = NULL;
+        ESP_LOGI(TAG, "BLE Beacon spam task stopped");
+    }
 }
