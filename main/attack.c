@@ -23,6 +23,7 @@
 #include "attack_dos.h"
 #include "webserver.h"
 #include "wifi_controller.h"
+#include "attack_beacon_spam.h"
 
 static const char* TAG = "attack";
 static attack_status_t attack_status = { .state = READY, .type = -1, .content_size = 0, .content = NULL };
@@ -92,6 +93,10 @@ static void attack_timeout(void* arg){
             ESP_LOGI(TAG, "Abort DOS attack...");
             attack_dos_stop();
             break;
+    case ATTACK_TYPE_BEACON_SPAM:
+        ESP_LOGI(TAG, "Abort BEACON SPAM attack...");
+        attack_beacon_spam_stop();
+        break;
         default:
             ESP_LOGE(TAG, "Unknown attack type. Not aborting anything");
     }
@@ -140,6 +145,9 @@ static void attack_request_handler(void *args, esp_event_base_t event_base, int3
         case ATTACK_TYPE_DOS:
             attack_dos_start(&attack_config);
             break;
+        case ATTACK_TYPE_BEACON_SPAM:
+        attack_beacon_spam_start(attack_request->method); // Use method field for beacon count
+        break;
         default:
             ESP_LOGE(TAG, "Unknown attack type!");
     }
