@@ -18,6 +18,7 @@
 #include "esp_wifi_types.h"
 
 static const char *TAG = "wsl_bypasser";
+
 /**
  * @brief Deauthentication frame template
  * 
@@ -35,7 +36,7 @@ static const uint8_t deauth_frame_default[] = {
 };
 
 /**
- * @brief Decomplied function that overrides original one at compilation time.
+ * @brief Decompiled function that overrides original one at compilation time.
  * 
  * @attention This function is not meant to be called!
  * @see Project with original idea/implementation https://github.com/GANESH-ICMC/esp32-deauther
@@ -56,4 +57,57 @@ void wsl_bypasser_send_deauth_frame(const wifi_ap_record_t *ap_record){
     memcpy(&deauth_frame[16], ap_record->bssid, 6);
     
     wsl_bypasser_send_raw_frame(deauth_frame, sizeof(deauth_frame_default));
+}
+
+/**
+ * @brief Sends a forged beacon frame with a custom SSID, BSSID, and channel.
+ * 
+ * @param bssid Pointer to 6-byte BSSID array
+ * @param ssid Pointer to SSID bytes
+ * @param ssid_length Length of SSID
+ * @param channel Wi-Fi channel to advertise on
+ */
+void wsl_bypasser_send_beacon_frame(uint8_t *bssid, uint8_t *ssid, uint8_t ssid_length, uint8_t channel) {
+    ESP_LOGD(TAG, "Sending beacon frame...");
+    
+    // Beacon frame buffer
+    uint8_t beacon_frame[128] = {
+        0x80, 0x00,                         // Frame Control (Beacon)
+        0x00, 0x00,                         // Duration
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // Destination MAC (broadcast)
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, // Source MAC placeholder
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, // BSSID placeholder
+        0x00, 0x00,                         // Sequence control
+
+        // Timestamp
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+        0x00, 0x00,
+
+        0x64, 0x00,                         // Beacon interval
+        0x01, 0x04,                         // Capability info
+
+        // SSID tag
+        0x00,                               // SSID tag number
+        0x00                                // SSID length (to be filled later)
+        // SSID data will follow
+    };
+    
+    // Insert BSSID and source MAC
+    memcpy(&beacon_frame[10], bssid, 6);
+    memcpy(&beacon_frame[16], bssid, 6);
+    
+    // Insert SSID
+    beacon_frame[37] = ssid_length;
+    memcpy(&beacon_frame[38], ssid, ssid_length);
+    
+    // Length so far
+    uint16_t frame_length = 38 + ssid_length;
+    
+    // Add channel info
+    beacon_frame[frame_length++] = 0x03; // DS Parameter Set tag
+    beacon_frame[frame_length++] = 0x01; // Length
+    beacon_frame[frame_length++] = channel;
+    
+    // Send using STA mode
+    esp_wifi_80211_tx(WIFI_IF_STA, beacon_frame, frame_length, false);
 }
