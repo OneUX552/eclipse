@@ -9,11 +9,8 @@
  * @param beacon_count Number of unique beacons to generate
  * @param duration Duration of attack in seconds
  */
-void attack_ble_beacon_start(uint8_t beacon_count, uint8_t duration);
+void attack_ble_beacon_start(int duration_seconds);
+void attack_ble_beacon_stop(void);
 
-/**
- * @brief Stops BLE Beacon Spam attack
- */
-void attack_ble_beacon_stop();
 
 #endif
