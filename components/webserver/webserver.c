@@ -24,6 +24,8 @@
 #include "hccapx_serializer.h"
 
 #include "pages/page_main.h"
+#include "pages/page_welcome.h"
+#include "pages/page_deauth.h"
 
 static const char* TAG = "webserver";
 ESP_EVENT_DEFINE_BASE(WEBSERVER_EVENTS);
@@ -31,7 +33,7 @@ ESP_EVENT_DEFINE_BASE(WEBSERVER_EVENTS);
 /**
  * @brief Handlers for index/root \c / path endpoint
  *
- * This endpoint provides index page source
+ * This endpoint provides welcome page source
  * @param req
  * @return esp_err_t
  * @{
@@ -39,13 +41,57 @@ ESP_EVENT_DEFINE_BASE(WEBSERVER_EVENTS);
 static esp_err_t uri_root_get_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
-    return httpd_resp_send(req, (const char *)page_index, page_index_len);
+    return httpd_resp_send(req, (const char *)page_welcome, page_welcome_len);
 }
 
 static httpd_uri_t uri_root_get = {
     .uri = "/",
     .method = HTTP_GET,
     .handler = uri_root_get_handler,
+    .user_ctx = NULL
+};
+//@}
+
+/**
+ * @brief Handlers for \c /main endpoint
+ *
+ * This endpoint provides main page source
+ * @param req
+ * @return esp_err_t
+ * @{
+ */
+static esp_err_t uri_main_get_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
+    return httpd_resp_send(req, (const char *)page_index, page_index_len);
+}
+
+static httpd_uri_t uri_main_get = {
+    .uri = "/main",
+    .method = HTTP_GET,
+    .handler = uri_main_get_handler,
+    .user_ctx = NULL
+};
+//@}
+
+/**
+ * @brief Handlers for \c /deauth endpoint
+ *
+ * This endpoint provides deauth page source
+ * @param req
+ * @return esp_err_t
+ * @{
+ */
+static esp_err_t uri_deauth_get_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
+    return httpd_resp_send(req, (const char *)page_deauth, page_deauth_len);
+}
+
+static httpd_uri_t uri_deauth_get = {
+    .uri = "/deauth",
+    .method = HTTP_GET,
+    .handler = uri_deauth_get_handler,
     .user_ctx = NULL
 };
 //@}
@@ -219,7 +265,9 @@ void webserver_run(){
     httpd_handle_t server = NULL;
 
     ESP_ERROR_CHECK(httpd_start(&server, &config));
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri_root_get));
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri_root_get));      // Welcome page
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri_main_get));      // Main attack page
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri_deauth_get));    // Deauth page
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri_reset_head));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri_ap_list_get));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri_run_attack_post));
