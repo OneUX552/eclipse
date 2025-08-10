@@ -1,0 +1,87 @@
+name: 4.4 ESP32 Firmware
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.8'
+
+    - name: Install ESP-IDF dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+
+    - name: Cache ESP-IDF
+      uses: actions/cache@v3
+      id: cache-esp-idf
+      with:
+        path: ${{ github.workspace }}/esp/esp-idf
+        key: esp-idf-v4.4-${{ runner.os }}-${{ hashFiles('**/esp-idf/**') }}
+        restore-keys: |
+          esp-idf-v4.4-${{ runner.os }}-
+
+    - name: Install ESP-IDF v4.4
+      if: steps.cache-esp-idf.outputs.cache-hit != 'true'
+      run: |
+        rm -rf $HOME/esp/esp-idf  # clean old idf if any
+        mkdir -p $HOME/esp
+        cd $HOME/esp
+        git clone --branch v4.4 --depth 1 --recursive https://github.com/espressif/esp-idf.git
+        cd esp-idf
+        ./install.sh
+
+    - name: Set up environment
+      run: |
+        echo "$HOME/esp/esp-idf/tools" >> $GITHUB_PATH
+        echo "IDF_PATH=$HOME/esp/esp-idf" >> $GITHUB_ENV
+
+    - name: Cache build output
+      uses: actions/cache@v3
+      id: cache-build
+      with:
+        path: build
+        key: build-${{ runner.os }}-${{ hashFiles('**/*.c', '**/*.h', '**/*.mk', '**/*.cmake', 'sdkconfig') }}
+        restore-keys: |
+          build-${{ runner.os }}-
+
+    - name: Build firmware
+      run: |
+        source $HOME/esp/esp-idf/export.sh
+        idf.py build
+
+    - name: Collect all binaries
+      run: |
+        mkdir -p firmware-binaries
+        cp -r build/* firmware-binaries/
+        cp sdkconfig firmware-binaries/
+        echo '#!/bin/bash' > firmware-binaries/flash.sh
+        echo 'esptool.py --chip esp32 --port $1 --baud 921600 \' >> firmware-binaries/flash.sh
+        echo '  --before default_reset --after hard_reset write_flash \' >> firmware-binaries/flash.sh
+        echo '  --flash_mode dio --flash_size detect --flash_freq 40m \' >> firmware-binaries/flash.sh
+        echo '  0x1000 bootloader/bootloader.bin \' >> firmware-binaries/flash.sh
+        echo '  0x8000 partition_table/partition-table.bin \' >> firmware-binaries/flash.sh
+        echo '  0x10000 esp32-wifi-penetration-tool.bin' >> firmware-binaries/flash.sh
+        chmod +x firmware-binaries/flash.sh
+
+    - name: Upload firmware artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: firmware-binaries
+        path: firmware-binaries/
+        retention-days: 7
