@@ -98,6 +98,10 @@ static void attack_timeout(void* arg){
         ESP_LOGI(TAG, "Abort BEACON SPAM attack...");
         attack_beacon_spam_stop();
         break;
+                case ATTACK_TYPE_BLE_BEACON_SPAM:
+            ESP_LOGI(TAG, "Abort BLE Beacon Spam attack...");
+            attack_ble_beacon_stop();
+            break;
         default:
             ESP_LOGE(TAG, "Unknown attack type. Not aborting anything");
     }
@@ -117,10 +121,14 @@ static void attack_timeout(void* arg){
  * @param event_id expects WEBSERVER_EVENT_ATTACK_REQUEST
  * @param event_data expects attack_request_t
  */
-static void attack_request_handler(void *args, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-    ESP_LOGI(TAG, "Starting attack...");
+static void attack_request_handler(void *args, esp_event_base_t event_base, 
+                                  int32_t event_id, void *event_data) {
     attack_request_t *attack_request = (attack_request_t *) event_data;
-    attack_config_t attack_config = { .type = attack_request->type, .method = attack_request->method, .timeout = attack_request->timeout };
+    attack_config_t attack_config = { 
+        .type = attack_request->type, 
+        .method = attack_request->method,
+        .timeout = attack_request->timeout
+    };
     attack_config.ap_record = wifictl_get_ap_record(attack_request->ap_record_id);
     
     attack_status.state = RUNNING;
@@ -149,6 +157,10 @@ static void attack_request_handler(void *args, esp_event_base_t event_base, int3
         case ATTACK_TYPE_BEACON_SPAM:
         attack_beacon_spam_start(attack_request->method); // Use method field for beacon count
         break;
+        case ATTACK_TYPE_BLE_BEACON_SPAM:
+            // For BLE Beacon, use method field for beacon count
+            attack_ble_beacon_start(attack_request->method, attack_request->timeout);
+            break;
         default:
             ESP_LOGE(TAG, "Unknown attack type!");
     }
