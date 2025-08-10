@@ -23,7 +23,7 @@
 #include "pcap_serializer.h"
 #include "hccapx_serializer.h"
 
-#include "pages/page_index.h"
+#include "pages/page_main.h"
 
 static const char* TAG = "webserver";
 ESP_EVENT_DEFINE_BASE(WEBSERVER_EVENTS);
