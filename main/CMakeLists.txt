@@ -3,4 +3,9 @@ idf_component_register(
     INCLUDE_DIRS .
     REQUIRES bt freertos esp_wifi
      REQUIRES wifi_controller
+     REQUIRES frame_analyzer
+     REQUIRES hccapx_serializer
+     REQUIRES pcap_serializer
+     REQUIRES webserver
+     REQUIRES wsl_bypasser
 )
