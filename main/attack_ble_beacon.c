@@ -5,6 +5,7 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include <string.h>
+#include "esp_bt_main.h"
 
 static const char *TAG = "ble_beacon_spam";
 
