@@ -24,6 +24,7 @@
 #include "webserver.h"
 #include "wifi_controller.h"
 #include "attack_beacon_spam.h"
+#include "attack_ble_beacon.h"
 
 static const char* TAG = "attack";
 static attack_status_t attack_status = { .state = READY, .type = -1, .content_size = 0, .content = NULL };
