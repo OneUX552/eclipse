@@ -7,7 +7,7 @@ idf_component_register(
         "attack_pmkid.c"
         "attack.c"
         "attack_beacon_spam.c"
-        "attack_ble_beacon.c"
+        "attack_ble_spam.c"
     INCLUDE_DIRS 
         .
     REQUIRES 
