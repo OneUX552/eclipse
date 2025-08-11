@@ -13,6 +13,47 @@ static const char *TAG = "ble_spam";
 static bool attack_active = false;
 static TaskHandle_t ble_task_handle = NULL;
 
+static esp_power_level_t get_random_tx_power() {
+    static const esp_power_level_t power_levels[] = {
+    #ifdef ESP_PWR_LVL_P9
+        ESP_PWR_LVL_P9,
+    #endif
+    #ifdef ESP_PWR_LVL_P8
+        ESP_PWR_LVL_P8,
+    #endif
+    #ifdef ESP_PWR_LVL_P7
+        ESP_PWR_LVL_P7,
+    #endif
+    #ifdef ESP_PWR_LVL_P6
+        ESP_PWR_LVL_P6,
+    #endif
+    #ifdef ESP_PWR_LVL_P5
+        ESP_PWR_LVL_P5,
+    #endif
+    #ifdef ESP_PWR_LVL_P3
+        ESP_PWR_LVL_P3,
+    #endif
+    #ifdef ESP_PWR_LVL_N0
+        ESP_PWR_LVL_N0,
+    #endif
+    #ifdef ESP_PWR_LVL_N3
+        ESP_PWR_LVL_N3,
+    #endif
+    #ifdef ESP_PWR_LVL_N6
+        ESP_PWR_LVL_N6,
+    #endif
+    #ifdef ESP_PWR_LVL_N9
+        ESP_PWR_LVL_N9,
+    #endif
+    #ifdef ESP_PWR_LVL_N12
+        ESP_PWR_LVL_N12,
+    #endif
+    };
+
+    int count = sizeof(power_levels) / sizeof(power_levels[0]);
+    return power_levels[rand() % count];
+}
+
 /*
   These are audio devices: wireless headphones / earbuds
   It seems these need a shorter range between ESP & iDevice
@@ -153,15 +194,8 @@ static void ble_spam_task(void *pvParameters) {
         esp_ble_gap_stop_advertising();
 
         // Random TX power
-        int rand_val = rand() % 100;
-        esp_power_level_t power = ESP_PWR_LVL_P9;
-        if (rand_val < 70) power = ESP_PWR_LVL_P9;
-        else if (rand_val < 85) power = ESP_PWR_LVL_P8;
-        else if (rand_val < 95) power = ESP_PWR_LVL_P7;
-        else if (rand_val < 99) power = ESP_PWR_LVL_P6;
-        else power = ESP_PWR_LVL_P5;
-        
-        esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, power);
+esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, get_random_tx_power());
+
         vTaskDelay(900 / portTICK_PERIOD_MS);
     }
 
