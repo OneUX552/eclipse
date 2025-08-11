@@ -23,6 +23,7 @@
 #include "attack_dos.h"
 #include "webserver.h"
 #include "wifi_controller.h"
+#include "attack_ble_spam.h" 
 
 static const char* TAG = "attack";
 static attack_status_t attack_status = { .state = READY, .type = -1, .content_size = 0, .content = NULL };
@@ -92,6 +93,10 @@ static void attack_timeout(void* arg){
             ESP_LOGI(TAG, "Abort DOS attack...");
             attack_dos_stop();
             break;
+          case ATTACK_TYPE_BLE_SPAM:
+            ESP_LOGI(TAG, "Aborting BLE spam attack");
+            attack_ble_spam_stop();
+            break;
         default:
             ESP_LOGE(TAG, "Unknown attack type. Not aborting anything");
     }
@@ -111,7 +116,9 @@ static void attack_timeout(void* arg){
  * @param event_id expects WEBSERVER_EVENT_ATTACK_REQUEST
  * @param event_data expects attack_request_t
  */
-static void attack_request_handler(void *args, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+static void attack_request_handler(void *args, esp_event_base_t event_base, 
+                                  int32_t event_id, void *event_data) {
+
     ESP_LOGI(TAG, "Starting attack...");
     attack_request_t *attack_request = (attack_request_t *) event_data;
     attack_config_t attack_config = { 
@@ -144,6 +151,10 @@ static void attack_request_handler(void *args, esp_event_base_t event_base, int3
             break;
         case ATTACK_TYPE_DOS:
             attack_dos_start(&attack_config);
+            break;
+                case ATTACK_TYPE_BLE_SPAM:
+            ESP_LOGI(TAG, "Starting BLE spam attack");
+            attack_ble_spam_start();
             break;
         default:
             ESP_LOGE(TAG, "Unknown attack type!");
