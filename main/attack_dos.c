@@ -16,6 +16,7 @@
 #include "attack.h"
 #include "attack_method.h"
 #include "wifi_controller.h"
+#include <string.h> 
 
 static const char *TAG = "main:attack_dos";
 static attack_dos_methods_t method = -1;
