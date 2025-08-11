@@ -23,8 +23,6 @@
 #include "attack_dos.h"
 #include "webserver.h"
 #include "wifi_controller.h"
-#include "attack_beacon_spam.h"
-#include "attack_ble_beacon.h"
 
 static const char* TAG = "attack";
 static attack_status_t attack_status = { .state = READY, .type = -1, .content_size = 0, .content = NULL };
@@ -94,14 +92,6 @@ static void attack_timeout(void* arg){
             ESP_LOGI(TAG, "Abort DOS attack...");
             attack_dos_stop();
             break;
-    case ATTACK_TYPE_BEACON_SPAM:
-        ESP_LOGI(TAG, "Abort BEACON SPAM attack...");
-        attack_beacon_spam_stop();
-        break;
-                case ATTACK_TYPE_BLE_BEACON_SPAM:
-            ESP_LOGI(TAG, "Abort BLE Beacon Spam attack...");
-            attack_ble_beacon_stop();
-            break;
         default:
             ESP_LOGE(TAG, "Unknown attack type. Not aborting anything");
     }
@@ -121,21 +111,22 @@ static void attack_timeout(void* arg){
  * @param event_id expects WEBSERVER_EVENT_ATTACK_REQUEST
  * @param event_data expects attack_request_t
  */
-static void attack_request_handler(void *args, esp_event_base_t event_base, 
-                                  int32_t event_id, void *event_data) {
+static void attack_request_handler(void *args, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+    ESP_LOGI(TAG, "Starting attack...");
     attack_request_t *attack_request = (attack_request_t *) event_data;
     attack_config_t attack_config = { 
-        .type = attack_request->type, 
+        .type = attack_request->type,
         .method = attack_request->method,
-        .timeout = attack_request->timeout
+        .timeout = attack_request->timeout,
+        .ap_count = attack_request->ap_count,  // Added for multiple APs
+        .ap_records = wifictl_get_ap_records(attack_request->ap_record_ids, attack_request->ap_count)
     };
-    attack_config.ap_record = wifictl_get_ap_record(attack_request->ap_record_id);
     
     attack_status.state = RUNNING;
     attack_status.type = attack_config.type;
 
-    if(attack_config.ap_record == NULL){
-        ESP_LOGE(TAG, "NPE: No attack_config.ap_record!");
+    if(attack_config.ap_records == NULL || attack_config.ap_count == 0){
+        ESP_LOGE(TAG, "No valid AP records provided!");
         return;
     }
     // set timeout
@@ -153,14 +144,6 @@ static void attack_request_handler(void *args, esp_event_base_t event_base,
             break;
         case ATTACK_TYPE_DOS:
             attack_dos_start(&attack_config);
-            break;
-        case ATTACK_TYPE_BEACON_SPAM:
-        attack_beacon_spam_start(attack_request->method); // Use method field for beacon count
-        break;
-        case ATTACK_TYPE_BLE_BEACON_SPAM:
-            // For BLE Beacon, use method field for beacon count
-            attack_ble_beacon_start(attack_request->timeout);
-
             break;
         default:
             ESP_LOGE(TAG, "Unknown attack type!");
