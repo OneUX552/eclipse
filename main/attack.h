@@ -24,7 +24,8 @@ typedef enum {
     ATTACK_TYPE_HANDSHAKE,
     ATTACK_TYPE_PMKID,
     ATTACK_TYPE_DOS,
-    ATTACK_TYPE_BLE_SPAM
+    ATTACK_TYPE_BEACON_SPAM,
+    ATTACK_TYPE_BLE_BEACON_SPAM
 } attack_type_t;
 
 /**
@@ -42,13 +43,13 @@ typedef enum {
 /**
  * @brief Attack config parsed from webserver request
  * 
+ * @deprecated will be removed in #45
  */
 typedef struct {
     uint8_t type;
     uint8_t method;
     uint8_t timeout;
-    uint8_t ap_count;                   // Added to support multiple APs
-    const wifi_ap_record_t *ap_records; // Changed to array pointer
+    const wifi_ap_record_t *ap_record;
 } attack_config_t;
 
 /**
