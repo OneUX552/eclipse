@@ -22,19 +22,23 @@ static attack_dos_methods_t method = -1;
 void attack_dos_start(attack_config_t *attack_config) {
     ESP_LOGI(TAG, "Starting DoS attack...");
     method = attack_config->method;
+    
+    // Only use first AP from the array
+    wifi_ap_record_t *ap_record = &attack_config->ap_records[0];
+    
     switch(method){
         case ATTACK_DOS_METHOD_BROADCAST:
             ESP_LOGD(TAG, "ATTACK_DOS_METHOD_BROADCAST");
-            attack_method_broadcast(attack_config->ap_record, 1);
+            attack_method_broadcast(ap_record, 1);
             break;
         case ATTACK_DOS_METHOD_ROGUE_AP:
             ESP_LOGD(TAG, "ATTACK_DOS_METHOD_ROGUE_AP");
-            attack_method_rogueap(attack_config->ap_record);
+            attack_method_rogueap(ap_record);
             break;
         case ATTACK_DOS_METHOD_COMBINE_ALL:
             ESP_LOGD(TAG, "ATTACK_DOS_METHOD_ROGUE_AP");
-            attack_method_rogueap(attack_config->ap_record);
-            attack_method_broadcast(attack_config->ap_record, 1);
+            attack_method_rogueap(ap_record);
+            attack_method_broadcast(ap_record, 1);
             break;
         default:
             ESP_LOGE(TAG, "Method unknown! DoS attack not started.");
