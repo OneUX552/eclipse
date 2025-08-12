@@ -50,13 +50,16 @@ static void eapolkey_frame_handler(void *args, esp_event_base_t event_base, int3
 void attack_handshake_start(attack_config_t *attack_config){
     ESP_LOGI(TAG, "Starting handshake attack...");
     method = attack_config->method;
-    ap_record = attack_config->ap_record;
+    // Use first AP from array
+    ap_record = &attack_config->ap_records[0];
+    
     pcap_serializer_init();
     hccapx_serializer_init(ap_record->ssid, strlen((char *)ap_record->ssid));
     wifictl_sniffer_filter_frame_types(true, false, false);
     wifictl_sniffer_start(ap_record->primary);
     frame_analyzer_capture_start(SEARCH_HANDSHAKE, ap_record->bssid);
     ESP_ERROR_CHECK(esp_event_handler_register(FRAME_ANALYZER_EVENTS, DATA_FRAME_EVENT_EAPOLKEY_FRAME, &eapolkey_frame_handler, NULL));
+    
     switch(attack_config->method){
         case ATTACK_HANDSHAKE_METHOD_BROADCAST:
             ESP_LOGD(TAG, "ATTACK_HANDSHAKE_METHOD_BROADCAST");
