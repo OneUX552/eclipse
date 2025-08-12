@@ -49,7 +49,9 @@ typedef struct {
     uint8_t type;
     uint8_t method;
     uint8_t timeout;
-    const wifi_ap_record_t *ap_record;
+    // Added for multi-AP support:
+    unsigned ap_count;
+    wifi_ap_record_t *ap_records;
 } attack_config_t;
 
 /**
