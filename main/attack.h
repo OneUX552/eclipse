@@ -25,7 +25,7 @@ typedef enum {
     ATTACK_TYPE_PMKID,
     ATTACK_TYPE_DOS,
     ATTACK_TYPE_BEACON_SPAM,
-    ATTACK_TYPE_BLE_BEACON_SPAM
+    ATTACK_TYPE_BLE_SPAM
 } attack_type_t;
 
 /**
