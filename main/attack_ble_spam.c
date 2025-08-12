@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-static const char *TAG = "ble_spam";
+
 static bool attack_active = false;
 static TaskHandle_t ble_task_handle = NULL;
 
